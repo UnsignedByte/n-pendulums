@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:34:46
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-04-15 18:34:26
+* @Last Modified time: 2021-04-15 19:40:43
 */
 
 #pragma once
@@ -28,7 +28,7 @@ public:
  
 	sf::Vector2f pos();
 
-	virtual void render(sf::VertexArray&, int) const;
+	virtual void render(sf::VertexArray&, int);
 
 	/**
 	 * @param fT force of tension exerted
@@ -51,6 +51,6 @@ struct Root : Pendulum
 	{
 	}
 
-	void render(sf::VertexArray&, int) const;
+	void render(sf::VertexArray&, int);
 	void update(sf::Vector2f, int);
 };

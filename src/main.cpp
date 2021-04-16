@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:21:00
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-04-15 18:32:42
+* @Last Modified time: 2021-04-15 19:43:08
 */
 
 #include <SFML/Graphics.hpp>
@@ -13,14 +13,21 @@
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
-const sf::Time frameTime = sf::seconds(1.f);
-
+const sf::Time frameTime = sf::seconds(1/100.f);
+const int COUNT = 50;
+const float LEN = HEIGHT/static_cast<float>(COUNT);
 
 int main()
 {
 	int x = 0;
+
+	Pendulum* pendulums = new Pendulum[COUNT];
 	Root root(sf::Vector2f(WIDTH/2, 0));
-	Pendulum p1(&root, M_PI/2, 50.f);
+
+	pendulums[0] = Pendulum(&root, M_PI/2, LEN);
+	for(int i = 1; i < COUNT; i++){
+		pendulums[i] = Pendulum(&pendulums[i-1], M_PI/2, LEN);
+	}
 
 	// Create the main window
 	sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Pendulous Pendulum");
@@ -42,10 +49,10 @@ int main()
 
 		window.clear();
 
-		p1.update(sf::Vector2f(0,0), 0);
+		pendulums[COUNT-1].update(sf::Vector2f(0,0), 0);
 
-		sf::VertexArray arr(sf::LineStrip, 2);
-		p1.render(arr, 0);
+		sf::VertexArray arr(sf::LineStrip, COUNT+1);
+		pendulums[COUNT-1].render(arr, 0);
 		window.draw(arr);
 
 		window.display();
