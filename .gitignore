@@ -34,3 +34,6 @@ obj/*
 *.exe
 *.out
 *.app
+
+# Input
+*.in
