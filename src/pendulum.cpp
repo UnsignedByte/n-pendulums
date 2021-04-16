@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:34:57
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-04-15 22:25:12
+* @Last Modified time: 2021-04-15 22:49:32
 */
 #include <iostream>
 #include "pendulum.hpp"
@@ -18,10 +18,11 @@ void Pendulum::update(sf::Vector2f fT, int idx)
 	_theta = std::atan2(disp.x, disp.y);
 
 	float fTdisptheta = _theta-std::atan2(fT.x, fT.y);
-	_acc = (-G*std::sin(_theta)+sign(fT.y)*abs(fT)*std::sin(fTdisptheta))/l; // angular acceleration
+	_acc = (-G*m*std::sin(_theta)+sign(fT.y)*abs(fT)*std::sin(fTdisptheta))/(l*m); // angular acceleration
 	_vel += _acc*DT;
+	// _vel = std::max(std::min(_vel, mv), -mv);
 	// _vel *= 1-DT*0.01;
-	fT = sf::Vector2f(std::sin(_theta), std::cos(_theta))*(std::cos(_theta)*G+std::cos(fTdisptheta)*abs(fT)); //update with new tension force
+	fT = sf::Vector2f(std::sin(_theta), std::cos(_theta))*(std::cos(_theta)*G*m+std::cos(fTdisptheta)*abs(fT)); //update with new tension force
 	_theta -= _vel*DT;
 	// std::cout << "became " << *this << std::endl;
 	_pos = _parent->pos()-sf::Vector2f(std::sin(_theta)*l, std::cos(_theta)*l);

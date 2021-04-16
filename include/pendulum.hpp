@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:34:46
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-04-15 19:40:43
+* @Last Modified time: 2021-04-15 22:34:28
 */
 
 #pragma once
@@ -19,7 +19,7 @@ public:
 	{
 	}
 
-	Pendulum(Pendulum* parent, float angle, float length): _parent(parent), _theta(angle), l(length)
+	Pendulum(Pendulum* parent, float angle, float length, float mass): _parent(parent), _theta(angle), l(length), m(mass)
 	{
 		_pos = sf::Vector2f(std::sin(angle)*l, std::cos(angle)*l)+_parent->pos();
 	}
