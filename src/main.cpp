@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:21:00
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-04-15 19:43:08
+* @Last Modified time: 2021-04-15 22:10:23
 */
 
 #include <SFML/Graphics.hpp>
@@ -11,10 +11,10 @@
 #include <cstring>
 #include "pendulum.hpp"
 
-const int WIDTH = 800;
+const int WIDTH = 1200;
 const int HEIGHT = 600;
-const sf::Time frameTime = sf::seconds(1/100.f);
-const int COUNT = 50;
+const sf::Time frameTime = sf::seconds(1/250.f);
+const int COUNT = 100;
 const float LEN = HEIGHT/static_cast<float>(COUNT);
 
 int main()
@@ -24,9 +24,9 @@ int main()
 	Pendulum* pendulums = new Pendulum[COUNT];
 	Root root(sf::Vector2f(WIDTH/2, 0));
 
-	pendulums[0] = Pendulum(&root, M_PI/2, LEN);
+	pendulums[0] = Pendulum(&root, 3*M_PI/4, LEN);
 	for(int i = 1; i < COUNT; i++){
-		pendulums[i] = Pendulum(&pendulums[i-1], M_PI/2, LEN);
+		pendulums[i] = Pendulum(&pendulums[i-1], 3*M_PI/4, LEN);
 	}
 
 	// Create the main window
@@ -57,8 +57,8 @@ int main()
 
 		window.display();
 
-		std::cout << "FRAME #: " << ++x << std::endl;
-		std::cout << renderClock.getElapsedTime().asMilliseconds() << std::endl;
+		// std::cout << "FRAME #: " << ++x << std::endl;
+		// std::cout << renderClock.getElapsedTime().asMilliseconds() << std::endl;
 		sf::sleep(frameTime-renderClock.getElapsedTime());
 		renderClock.restart();
 	}
