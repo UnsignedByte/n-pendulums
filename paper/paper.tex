@@ -1,0 +1,92 @@
+% @Author: UnsignedByte
+% @Date:   11:12:32, 08-Dec-2020
+% @Last Modified by:   UnsignedByte
+% @Last Modified time: 2021-05-06 23:13:10
+
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\graphicspath{ {./images/} }
+\usepackage[%  
+    colorlinks=true,
+    pdfborder={0 0 0},
+    linkcolor=black
+]{hyperref}
+\title{Generalized Derivation for the motion of an n-pendulum system}
+\author{Edmund Lam \and Nicolas Wieczorek}
+\begin{document}
+\begin{titlepage}
+	\maketitle
+	\thispagestyle{empty}
+\end{titlepage}
+\newpage
+  \tableofcontents
+\newpage
+
+\section{Introduction}
+All source code for this project is public on \href{https://github.com/UnsignedByte/n-pendulums}{Github}.
+
+\section{Lagrangian Approach}
+In contrast to the limitations of the Newtonian Free Body Diagram approach to calculating propogated forces amongst an $n$-pendulum system, the use of Lagrangian Mechanics does not require an analysis of forces. Instead, the total potential and kinetic energy in the system is used to determine equations of motion for each pendulum in the system.
+\subsection{Derivation of Equations of Motion for Finite \texorpdfstring{$n$}{n}}
+The use of the lagrangian method requires on two main 
+\subsubsection{Deriving the Lagrangian \texorpdfstring{$L=T-V$}{L=T-V}}
+We begin by defining the kinematic constraints of our problem.
+\begin{align*}
+	x_i &= x_{i-1} + l\sin{\theta_i}\\
+	&= l\sum_{k=1}^i\sin{\theta_k}\\
+	y_i &= y_{i-1} - l\cos{\theta_i}\\
+	&= -l\sum_{k=1}^i\cos{\theta_k}
+\end{align*}
+Note that $y_i$ is negative, because $\theta_i$ is to the negative vertical. Next we derive the velocities. These can be calculated simply by taking the derivative of the positions.
+\begin{align*}
+	\dot{x}_i &= \dot x_{i-1} + \dot\theta_i \cdot l\cos{\theta_i}\\
+	&= l\sum_{k=1}^i\dot\theta_k\cos{\theta_k}\\
+	\dot{x}_i &= \dot y_{i-1} + \dot\theta_i \cdot l\sin{\theta_i}\\
+	&= l\sum_{k=1}^i\dot\theta_k\sin{\theta_k}
+\end{align*}
+Plugging these in, we can calculate the total potential energy $V=mgh$ and the total kinetic energy $T=mv^2$. First, we solve for $V$ and simplify:
+\begin{align*}
+	V &= mg\sum_{i=1}^n y_i \\
+	&=-mgl\sum_{i=1}^n\sum_{k=1}^i\cos\theta_k
+	&\text{(Substitute in $y_i$)}\\
+	&=-mgl\sum_{i=1}^n (n-i+1)\cos\theta_i
+	&\text{(Each element $\cos\theta_i$ appears $(n-i+1)$ times)}\\
+\end{align*}
+And we can do the same with $T$.
+\begin{align*}
+	T &= \frac{m}{2}\sum_{i=1}^n (\dot{x}_i^2+\dot{y}_i^2)\\
+	&= \frac{ml^2}{2}\sum_{i=1}^n \left(\left(\sum_{k=1}^i\dot\theta_k\cos{\theta_k}\right)^2+\left(\sum_{k=1}^i\dot\theta_k\sin{\theta_k}\right)^2\right)
+	&\text{(Substitute in $\dot x_i$ and $\dot y_i$)}\\
+	&= \frac{ml^2}{2}\sum_{i=1}^n \sum_{j=1}^i\sum_{k=1}^i\dot\theta_j\dot\theta_k\left(\cos{\theta_j}\cos{\theta_k}+\sin{\theta_j}\sin{\theta_k}\right)
+	&\text{(Expand squared sums)}\\
+	&= \frac{ml^2}{2}\sum_{i=1}^n \sum_{j=1}^i\sum_{k=1}^i\dot\theta_j\dot\theta_k\cos(\theta_j-\theta_k)
+	&\text{(Simplify using $\cos$ addition formula)}\\
+	&= \frac{ml^2}{2} \sum_{j=1}^n\sum_{k=1}^n(n-\max(j,k)+1)\dot\theta_j\dot\theta_k\cos(\theta_j-\theta_k)
+	&\text{(Simplify out first sum)}\\
+\end{align*}
+Next, we can plug $T$ and $V$ into the lagrangian, giving us the following:
+\begin{align*}
+	L &= T-V \\
+	&=  \frac{ml^2}{2} \sum_{j=1}^n\sum_{k=1}^n(n-\max(j,k)+1)\dot\theta_j\dot\theta_k\cos(\theta_j-\theta_k) + mgl\sum_{i=1}^n (n-i+1)\cos\theta_i\\
+\end{align*}
+\subsubsection{Utilizing Lagrange's Equations of Motion}
+Now that we have our $L$ expression, we can use this to solve for the angular acceleration of each pendulum using Lagrange's equations of motion. We start with the equation $0 = \frac{d}{dt}\left(\frac{\partial L}{\partial \dot \theta_i}\right) - \frac{\partial L}{\partial \theta_i}$, and we will use this equation to solve for all $\ddot\theta_i.$
+
+First, we try to solve for $\frac{\partial L}{\partial \dot \theta_i}$ by taking a derivative of $L$ with respect to $\dot\theta_i$. We first make an important observation: all terms in multiple sums of $L$ that do not contain $\dot\theta_i$ can be treated as a constant, and will be removed. We immediately can remove $V,$ which leaves us with the $T$ term. Because $\dot\theta_i$ appears if and only if $j=i$ or $k=i$, we can simplify our equation much further. We can arbitrarily plug in $j=i$ or $k=i$ into our equation. Before this, however, we must separate our sum due to the special case $i=i$. Firstly, the term simplifies to $\dot\theta_i^2$ when $i=i,$ which cannot be differentiated while treating one of the $\dot\theta_i$ as a constant. It is also the only term that would be double counted if we had kept the simple single sum and doubled it. This gives us 3 cases, one for $i=i,$ one for $1\leq k\le i$ and finally for $i+1\leq k \leq n$. The latter two are counted twice, once as $\dot\theta_i\dot\theta_k$ and once as $\dot\theta_k\dot\theta_i,$ thus we need a factor of two before both sums. This gives us the following, which we can further simplify:
+\begin{align*}
+&\frac{ml^2}{2}\frac{\partial L}{\partial \dot \theta_i}\left((n-i+1)\dot\theta_i^2 + 2\sum_{k=1}^{i-1}(n-i+1)\dot\theta_i\dot\theta_k\cos(\theta_i-\theta_k)\right.\\
+&\qquad\qquad+ \left.2\sum_{k=i+1}^n(n-k+1)\dot\theta_i\dot\theta_k\cos(\theta_i-\theta_k)\right)\\
+&= ml^2\left((n-i+1)\dot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\dot\theta_k\cos(\theta_i-\theta_k)\right.\\
+&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\dot\theta_k\cos(\theta_i-\theta_k)\right)
+\end{align*}
+Next we take the derivative with respect to time:
+\begin{align*}
+&= ml^2\frac{d}{dt}\left((n-i+1)\dot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\dot\theta_k\cos(\theta_i-\theta_k)\right.\\
+&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\dot\theta_k\cos(\theta_i-\theta_k)\right)\\
+&= ml^2\left((n-i+1)\ddot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right.\\
+&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right)\\
+\end{align*}
+\subsection{Generalization to an Infinite Rope}
+e
+\end{document}
