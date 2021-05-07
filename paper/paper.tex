@@ -1,7 +1,7 @@
 % @Author: UnsignedByte
 % @Date:   11:12:32, 08-Dec-2020
 % @Last Modified by:   UnsignedByte
-% @Last Modified time: 2021-05-06 23:13:10
+% @Last Modified time: 2021-05-07 00:29:29
 
 \documentclass{article}
 \usepackage{amsmath}
@@ -86,6 +86,30 @@ Next we take the derivative with respect to time:
 &\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\dot\theta_k\cos(\theta_i-\theta_k)\right)\\
 &= ml^2\left((n-i+1)\ddot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right.\\
 &\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right)\\
+\end{align*}
+Now that we have the $\frac{d}{dt}\left(\frac{\partial L}{\partial \dot\theta_i}\right)$ term, we want to get $\frac{\partial L}{\partial \theta_i}$ in order to finish our Lagrangian equations. We approach this with the same method: simplifying our equation for $L$ with only the terms consisting of $\theta_i$. For $T$, we have the same situation: a term only contains $\theta_i$ when $j=i$ or $k=i$. This gives us a similar equation, but one where $\dot\theta_i^2$ can be removed. This time, however, we must also consider $V$. $V$ is easy to simplify: the only term with $\theta_i$ is simply the $ith$ term of the sum. This gives us the following equation:
+\begin{align*}
+&\frac{ml^2}{2}\frac{\partial L}{\partial \theta_i}\left(2\sum_{k=1}^{i-1}(n-i+1)\dot\theta_i\dot\theta_k\cos(\theta_i-\theta_k)\right.\\
+&\qquad\qquad+ \left.2\sum_{k=i+1}^n(n-k+1)\dot\theta_i\dot\theta_k\cos(\theta_i-\theta_k)\right)\\
+&\qquad\qquad+ \frac{\partial L}{\partial \theta_i}\left(mgl(n-i+1)\cos\theta_i\right)\\
+&=-ml^2\left(\sum_{k=1}^{i-1}(n-i+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right.\\
+&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\\
+&\qquad\qquad- mgl(n-i+1)\sin\theta_i\\
+\end{align*}
+
+Plugging all of this into Lagrange's equations gives and simplifying, we get our final equation.
+\begin{align*}
+0&=ml^2\left((n-i+1)\ddot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right.\\
+&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right)\\
+&\qquad\qquad+ml^2\left(\sum_{k=1}^{i-1}(n-i+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k) + \sum_{k=i+1}^n(n-k+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\\
+&\qquad\qquad+ mgl(n-i+1)\sin\theta_i\\
+&=ml^2\left((n-i+1)\ddot\theta_i\right.\\
+&\qquad\qquad+ (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)+\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\\
+&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)+\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\right)\\
+&\qquad\qquad+ mgl(n-i+1)\sin\theta_i\\
+&=ml^2\left((n-i+1)\ddot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k^2\sin(\theta_i-\theta_k)\right)\right.\\
+&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k^2\sin(\theta_i-\theta_k)\right)\right)\\
+&\qquad\qquad+ mgl(n-i+1)\sin\theta_i
 \end{align*}
 \subsection{Generalization to an Infinite Rope}
 e
