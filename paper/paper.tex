@@ -1,7 +1,7 @@
 % @Author: UnsignedByte
 % @Date:   11:12:32, 08-Dec-2020
 % @Last Modified by:   UnsignedByte
-% @Last Modified time: 2021-05-07 00:29:29
+% @Last Modified time: 2021-05-08 00:39:12
 
 \documentclass{article}
 \usepackage{amsmath}
@@ -29,7 +29,7 @@ All source code for this project is public on \href{https://github.com/UnsignedB
 \section{Lagrangian Approach}
 In contrast to the limitations of the Newtonian Free Body Diagram approach to calculating propogated forces amongst an $n$-pendulum system, the use of Lagrangian Mechanics does not require an analysis of forces. Instead, the total potential and kinetic energy in the system is used to determine equations of motion for each pendulum in the system.
 \subsection{Derivation of Equations of Motion for Finite \texorpdfstring{$n$}{n}}
-The use of the lagrangian method requires on two main 
+The use of the lagrangian method requires on two main parts: defining constraints and variables, and using them to create equations of motion.
 \subsubsection{Deriving the Lagrangian \texorpdfstring{$L=T-V$}{L=T-V}}
 We begin by defining the kinematic constraints of our problem.
 \begin{align*}
@@ -53,9 +53,9 @@ Plugging these in, we can calculate the total potential energy $V=mgh$ and the t
 	&=-mgl\sum_{i=1}^n (n-i+1)\cos\theta_i
 	&\text{(Each element $\cos\theta_i$ appears $(n-i+1)$ times)}\\
 \end{align*}
-And we can do the same with $T$.
+And we can do the same with $T$, substituting in $v^2=\sum_{i=1}^n\left(\dot{x}_i^2+\dot{y}_i^2\right)$.
 \begin{align*}
-	T &= \frac{m}{2}\sum_{i=1}^n (\dot{x}_i^2+\dot{y}_i^2)\\
+	T &= \frac{m}{2}\sum_{i=1}^n \left(\dot{x}_i^2+\dot{y}_i^2\right)\\
 	&= \frac{ml^2}{2}\sum_{i=1}^n \left(\left(\sum_{k=1}^i\dot\theta_k\cos{\theta_k}\right)^2+\left(\sum_{k=1}^i\dot\theta_k\sin{\theta_k}\right)^2\right)
 	&\text{(Substitute in $\dot x_i$ and $\dot y_i$)}\\
 	&= \frac{ml^2}{2}\sum_{i=1}^n \sum_{j=1}^i\sum_{k=1}^i\dot\theta_j\dot\theta_k\left(\cos{\theta_j}\cos{\theta_k}+\sin{\theta_j}\sin{\theta_k}\right)
@@ -70,8 +70,8 @@ Next, we can plug $T$ and $V$ into the lagrangian, giving us the following:
 	L &= T-V \\
 	&=  \frac{ml^2}{2} \sum_{j=1}^n\sum_{k=1}^n(n-\max(j,k)+1)\dot\theta_j\dot\theta_k\cos(\theta_j-\theta_k) + mgl\sum_{i=1}^n (n-i+1)\cos\theta_i\\
 \end{align*}
-\subsubsection{Utilizing Lagrange's Equations of Motion}
-Now that we have our $L$ expression, we can use this to solve for the angular acceleration of each pendulum using Lagrange's equations of motion. We start with the equation $0 = \frac{d}{dt}\left(\frac{\partial L}{\partial \dot \theta_i}\right) - \frac{\partial L}{\partial \theta_i}$, and we will use this equation to solve for all $\ddot\theta_i.$
+\subsubsection{Utilizing the Euler-Lagrange Equation}
+Now that we have our $L$ expression, we can use this to solve for the angular acceleration of each pendulum using the Euler-Lagrange Equation. We start with the equation $0 = \frac{d}{dt}\left(\frac{\partial L}{\partial \dot \theta_i}\right) - \frac{\partial L}{\partial \theta_i}$, and we will use this equation to solve for all $\ddot\theta_i.$
 
 First, we try to solve for $\frac{\partial L}{\partial \dot \theta_i}$ by taking a derivative of $L$ with respect to $\dot\theta_i$. We first make an important observation: all terms in multiple sums of $L$ that do not contain $\dot\theta_i$ can be treated as a constant, and will be removed. We immediately can remove $V,$ which leaves us with the $T$ term. Because $\dot\theta_i$ appears if and only if $j=i$ or $k=i$, we can simplify our equation much further. We can arbitrarily plug in $j=i$ or $k=i$ into our equation. Before this, however, we must separate our sum due to the special case $i=i$. Firstly, the term simplifies to $\dot\theta_i^2$ when $i=i,$ which cannot be differentiated while treating one of the $\dot\theta_i$ as a constant. It is also the only term that would be double counted if we had kept the simple single sum and doubled it. This gives us 3 cases, one for $i=i,$ one for $1\leq k\le i$ and finally for $i+1\leq k \leq n$. The latter two are counted twice, once as $\dot\theta_i\dot\theta_k$ and once as $\dot\theta_k\dot\theta_i,$ thus we need a factor of two before both sums. This gives us the following, which we can further simplify:
 \begin{align*}
@@ -87,7 +87,11 @@ Next we take the derivative with respect to time:
 &= ml^2\left((n-i+1)\ddot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right.\\
 &\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right)\\
 \end{align*}
-Now that we have the $\frac{d}{dt}\left(\frac{\partial L}{\partial \dot\theta_i}\right)$ term, we want to get $\frac{\partial L}{\partial \theta_i}$ in order to finish our Lagrangian equations. We approach this with the same method: simplifying our equation for $L$ with only the terms consisting of $\theta_i$. For $T$, we have the same situation: a term only contains $\theta_i$ when $j=i$ or $k=i$. This gives us a similar equation, but one where $\dot\theta_i^2$ can be removed. This time, however, we must also consider $V$. $V$ is easy to simplify: the only term with $\theta_i$ is simply the $ith$ term of the sum. This gives us the following equation:
+Because $\cos(\theta_i-\theta_i)=1$ and $\sin(\theta_i-\theta_i)=0$, we can combine these sums back into one, reducing our expression back to
+$$ml^2\sum_{k=1}^n(n-\max(i,k)+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right).$$
+Note that the derivative could not be taken from the outset, as that would ignore the special case altogether, as well as the double counting occuring in the other cases.
+
+Now that we have the $\frac{d}{dt}\left(\frac{\partial L}{\partial \dot\theta_i}\right)$ term, we want to get $\frac{\partial L}{\partial \theta_i}$ in order to finish our Euler-Lagrange Equation. We approach this with the same method: simplifying our equation for $L$ with only the terms consisting of $\theta_i$. For $T$, we have the same situation: a term only contains $\theta_i$ when $j=i$ or $k=i$. This gives us a similar equation, but one where $\dot\theta_i^2$ can be removed. This time, however, we must also consider $V$. $V$ is easy to simplify: the only term with $\theta_i$ is simply the $ith$ term of the sum. This gives us the following equation:
 \begin{align*}
 &\frac{ml^2}{2}\frac{\partial L}{\partial \theta_i}\left(2\sum_{k=1}^{i-1}(n-i+1)\dot\theta_i\dot\theta_k\cos(\theta_i-\theta_k)\right.\\
 &\qquad\qquad+ \left.2\sum_{k=i+1}^n(n-k+1)\dot\theta_i\dot\theta_k\cos(\theta_i-\theta_k)\right)\\
@@ -96,21 +100,81 @@ Now that we have the $\frac{d}{dt}\left(\frac{\partial L}{\partial \dot\theta_i}
 &\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\\
 &\qquad\qquad- mgl(n-i+1)\sin\theta_i\\
 \end{align*}
+Using the same reduction as before ($\sin(0)=0$), we can combine the sums again to get a final equation of
+$$-ml^2\sum_{k=1}^n\left((n-\max(i,k)+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right) - mgl(n-i+1)\sin\theta_i.$$
 
-Plugging all of this into Lagrange's equations gives and simplifying, we get our final equation.
+Plugging all of this into the Euler-Lagrange equations and simplifying, we get our final equation.
 \begin{align*}
-0&=ml^2\left((n-i+1)\ddot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right.\\
-&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\right)\\
-&\qquad\qquad+ml^2\left(\sum_{k=1}^{i-1}(n-i+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k) + \sum_{k=i+1}^n(n-k+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\\
+0&=ml^2\sum_{k=1}^n(n-\max(i,k)+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)\\
+&\qquad\qquad+ ml^2\sum_{k=1}^n\left((n-\max(i,k)+1)\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right) + mgl(n-i+1)\sin\theta_i\\
+&=ml^2\sum_{k=1}^n(n-\max(i,k)+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)+\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\\
 &\qquad\qquad+ mgl(n-i+1)\sin\theta_i\\
-&=ml^2\left((n-i+1)\ddot\theta_i\right.\\
-&\qquad\qquad+ (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)+\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\\
-&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)+\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)\right)\\
+&=ml^2\sum_{k=1}^n(n-\max(i,k)+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)+\dot\theta_k^2\sin(\theta_i-\theta_k)\right)\\
 &\qquad\qquad+ mgl(n-i+1)\sin\theta_i\\
-&=ml^2\left((n-i+1)\ddot\theta_i + (n-i+1)\sum_{k=1}^{i-1}\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k^2\sin(\theta_i-\theta_k)\right)\right.\\
-&\qquad\qquad+ \left.\sum_{k=i+1}^n(n-k+1)\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k^2\sin(\theta_i-\theta_k)\right)\right)\\
-&\qquad\qquad+ mgl(n-i+1)\sin\theta_i
 \end{align*}
+Because we can substitute into this equation with all $1\leq i\leq n$, we end up with a system of equations with $n$ variables and $n$ equations, which we can solve to calculate the acceleration of each.
 \subsection{Generalization to an Infinite Rope}
-e
+Now that we have our derivation with a finite rope, we generalize this to an infinite rope, with a constant finite mass and density. We define our mass-density of the total rope with $\frac{M}{L}$, such that $M$ is the total mass of the rope, $L$ is the total length of the rope, and $\frac{dm}{dl} = \frac{M}{L}$. Otherwise, we also need to define the function $\theta_l=\theta(l),$ which gives us the angle $\theta$ given a length $l$ along the rope. While the final Euler-Lagrange equation can be simply converted from the one derived in the finite set, the very similar infinite derivation is also included below.
+\subsubsection{Deriving the Lagrangian \texorpdfstring{$L=T-V$}{L=T-V}}
+Once again, we start with the kinematic constraints.
+\begin{align*}
+	x_i &= L\int_0^i\sin\theta_ldl\\
+	y_i &= -L\int_0^i\cos\theta_ldl
+\end{align*}
+Next, we calculate the velocities simply by taking the derivative of their position.
+\begin{align*}
+	\dot x_i &= L\int_0^i\dot\theta_l\cos\theta_ldl\\
+	\dot y_i &= L\int_0^i\dot\theta_l\sin\theta_ldl
+\end{align*}
+With these new equations, calculating the $T$ and $V$ terms becomes much simpler. Once again, we use the same starting equations, and simplify.
+\begin{align*}
+	V &= mg\int_0^L y_idi \\
+	&=-mgL\int_0^L\int_0^i\cos{\theta_l}dldi
+	&\text{(Substitute in $y_l$)}\\
+	&=-mgL\int_0^L(L-l)\cos{\theta_l}dl
+	&\text{(Reduce away inner integral)}
+\end{align*}
+We can do the same with $T$ as well.
+\begin{align*}
+	T &= \frac{m}{2}\int_0^L\left(\dot{x}_i^2+\dot{y}_i^2\right)di\\
+	&= \frac{mL^2}{2}\int_0^L\left(\left(\int_0^i\dot\theta_l\cos\theta_ldl\right)^2+\left(\int_0^i\dot\theta_l\sin\theta_ldl\right)^2\right)di
+	&\text{(Plug in values for sum)}\\
+	&= \frac{mL^2}{2}\int_0^L\int_0^i\int_0^i\dot\theta_j\dot\theta_k\left(\cos\theta_j\cos\theta_k+\sin\theta_j\sin\theta_k\right)djdkdi
+	&\text{(Simplify integrals)}\\
+	&= \frac{mL^2}{2}\int_0^L\int_0^i\int_0^i\dot\theta_j\dot\theta_k\cos(\theta_j-\theta_k)djdkdi
+	&\text{(Combine integrals)}\\
+	&= \frac{mL^2}{2}\int_0^L\int_0^L(L-\max(j,k))\dot\theta_j\dot\theta_k\cos(\theta_j-\theta_k)djdk
+	&\text{(Reduce outer integral)}\\
+\end{align*}
+Combining the two, we get our new $L$ value.
+\begin{align*}
+	L &= T-V \\
+	&= \frac{mL^2}{2}\int_0^L\int_0^L(L-\max(j,k))\dot\theta_j\dot\theta_k\cos(\theta_j-\theta_k)djdk + mgL\int_0^L(L-l)\cos\theta_ldl\\
+\end{align*}
+\subsubsection{Utilizing Lagrange's Equations of Motion}
+With our new $L$ value, we once again use this to solve Lagrange's equations of motion. This time we can ignore $i$, giving us $0 = \frac{d}{dt}\left(\frac{\partial L}{\partial \dot \theta}\right) - \frac{\partial L}{\partial \theta}$, and we will use this to find the function $\ddot\theta$.
+
+Once again, we start by solving for $\frac{\partial L}{\partial \dot \theta}$ by taking a derivative of $L$ with respect to $\dot\theta$. We can use the same tricks as before, but this time the $i=i$ case does not need to be specially considered, as the integral is continuous and a single individual value makes an insignificant change to the whole.
+\begin{align*}
+&mL^2\frac{\partial L}{\partial \dot \theta_i}\left(\int_0^L(L-\max(i,k))\dot\theta_i\dot\theta_k\cos(\theta_i-\theta_k)dk\right)\\
+&= mL^2\int_0^L(L-\max(i,k))\dot\theta_k\cos(\theta_i-\theta_k)dk
+\end{align*}
+Again, we take the derivative with respect to time:
+\begin{align*}
+&= mL^2\frac{d}{dt}\int_0^L(L-\max(i,k))\dot\theta_k\cos(\theta_i-\theta_k)dk\\
+&= mL^2\int_0^L(L-\max(i,k))\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)dk
+\end{align*}
+With $\frac{d}{dt}\left(\frac{\partial L}{\partial \dot\theta_i}\right)$ finished, we once again calculate the remaining term $\frac{\partial L}{\partial \theta_i}$.
+\begin{align*}
+&mL^2\frac{\partial L}{\partial \theta_i}\left(\int_0^L(L-\max(i,k))\dot\theta_i\dot\theta_k\cos(\theta_i-\theta_k)dk\right) + \frac{\partial L}{\partial \theta_i}mgL(L-i)\cos\theta_i\\
+&= mL^2\int_0^L(L-\max(i,k))\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)dk - mgL(L-i)\sin\theta_i\\
+\end{align*}
+Now, we combine this back into the Euler-Lagrange equation, and simplify.
+\begin{align*}
+0&=mL^2\int_0^L(L-\max(i,k))\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k)\right)dk\\
+&\qquad\qquad+ mL^2\int_0^L(L-\max(i,k))\dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)dk + mgL(L-i)\sin\theta_i\\
+&=mL^2\int_0^L(L-\max(i,k))\left(\ddot\theta_k\cos(\theta_i-\theta_k)-\dot\theta_k(\dot\theta_i-\dot\theta_k)\sin(\theta_i-\theta_k) + \dot\theta_i\dot\theta_k\sin(\theta_i-\theta_k)\right)dk\\
+&\qquad\qquad+ mgL(L-i)\sin\theta_i\\
+&=mL^2\int_0^L(L-\max(i,k))\left(\ddot\theta_k\cos(\theta_i-\theta_k)+\dot\theta_k^2\sin(\theta_i-\theta_k)\right)dk+ mgL(L-i)\sin\theta_i\\
+\end{align*}
 \end{document}
