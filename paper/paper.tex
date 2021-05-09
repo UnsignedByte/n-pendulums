@@ -1,7 +1,7 @@
 % @Author: UnsignedByte
 % @Date:   11:12:32, 08-Dec-2020
 % @Last Modified by:   UnsignedByte
-% @Last Modified time: 2021-05-08 00:39:12
+% @Last Modified time: 2021-05-08 13:59:47
 
 \documentclass{article}
 \usepackage{amsmath}
@@ -177,4 +177,7 @@ Now, we combine this back into the Euler-Lagrange equation, and simplify.
 &\qquad\qquad+ mgL(L-i)\sin\theta_i\\
 &=mL^2\int_0^L(L-\max(i,k))\left(\ddot\theta_k\cos(\theta_i-\theta_k)+\dot\theta_k^2\sin(\theta_i-\theta_k)\right)dk+ mgL(L-i)\sin\theta_i\\
 \end{align*}
+We have our equation 
+$$0=mL^2\int_0^L(L-\max(i,k))\left(\ddot\theta_k\cos(\theta_i-\theta_k)+\dot\theta_k^2\sin(\theta_i-\theta_k)\right)dk+ mgL(L-i)\sin\theta_i$$
+for all $i \in [0,L]$, which we next need to evaluate for all $\ddot\theta_i$.
 \end{document}
