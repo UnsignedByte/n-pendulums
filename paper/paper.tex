@@ -1,7 +1,7 @@
 % @Author: UnsignedByte
 % @Date:   11:12:32, 08-Dec-2020
 % @Last Modified by:   UnsignedByte
-% @Last Modified time: 2021-05-08 13:59:47
+% @Last Modified time: 2021-05-11 13:44:56
 
 \documentclass{article}
 \usepackage{amsmath}
@@ -12,7 +12,7 @@
     pdfborder={0 0 0},
     linkcolor=black
 ]{hyperref}
-\title{Generalized Derivation for the motion of an n-pendulum system}
+\title{Generalized Derivation for the Motion of an n-Pendulum System}
 \author{Edmund Lam \and Nicolas Wieczorek}
 \begin{document}
 \begin{titlepage}
@@ -45,7 +45,7 @@ Note that $y_i$ is negative, because $\theta_i$ is to the negative vertical. Nex
 	\dot{x}_i &= \dot y_{i-1} + \dot\theta_i \cdot l\sin{\theta_i}\\
 	&= l\sum_{k=1}^i\dot\theta_k\sin{\theta_k}
 \end{align*}
-Plugging these in, we can calculate the total potential energy $V=mgh$ and the total kinetic energy $T=mv^2$. First, we solve for $V$ and simplify:
+Plugging these in, we can calculate the total potential energy $V=mgh$ and the total kinetic energy $T=\frac{1}{2}mv^2$. First, we solve for $V$ and simplify:
 \begin{align*}
 	V &= mg\sum_{i=1}^n y_i \\
 	&=-mgl\sum_{i=1}^n\sum_{k=1}^i\cos\theta_k
@@ -180,4 +180,6 @@ Now, we combine this back into the Euler-Lagrange equation, and simplify.
 We have our equation 
 $$0=mL^2\int_0^L(L-\max(i,k))\left(\ddot\theta_k\cos(\theta_i-\theta_k)+\dot\theta_k^2\sin(\theta_i-\theta_k)\right)dk+ mgL(L-i)\sin\theta_i$$
 for all $i \in [0,L]$, which we next need to evaluate for all $\ddot\theta_i$.
+\subsubsection{Finding \texorpdfstring{$\ddot\theta_i$}{Angular Acceleration}}
+e
 \end{document}
