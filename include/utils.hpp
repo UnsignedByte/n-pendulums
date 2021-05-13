@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 16:49:10
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-05-08 17:56:15
+* @Last Modified time: 2021-05-13 15:31:07
 */
 
 #pragma once
@@ -21,3 +21,6 @@
 // std::ostream& operator<<(std::ostream&, const sf::Vector2<long double>);
 std::ostream& operator<<(std::ostream& os, std::vector<std::vector<long double> > matrix);
 std::ostream& operator<<(std::ostream& os, std::vector<long double> matrix);
+std::ostream& operator<<(std::ostream& os, std::vector<std::vector<double> > matrix);
+std::ostream& operator<<(std::ostream& os, std::vector<double> matrix);
+std::ostream& operator<<(std::ostream& os, std::vector<int> matrix);

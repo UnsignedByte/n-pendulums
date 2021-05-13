@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:21:00
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-05-13 14:32:52
+* @Last Modified time: 2021-05-13 15:33:16
 */
 
 #include <SFML/Graphics.hpp>
@@ -13,14 +13,14 @@
 #include <vector>
 #include <algorithm>
 #include <cstdio>
-#include <pthread.h>
-#include <assert.h>
 extern "C"
 {
 	#include <libavcodec/avcodec.h>
 	#include <libavformat/avformat.h>
 	#include <libavutil/avutil.h>
 	#include <libavformat/avio.h>
+
+	void dgesv_(int *n, int *nrhs, double *a, int *lda, int *ipiv, double *b, int *ldb, int *info);
 }
 #include "utils.hpp"
 
@@ -37,15 +37,15 @@ int fps = 30; // fps
 int duration = 60; // duration in seconds
 // const sf::Time frameTime = sf::seconds(1/60.f);
 // const sf::Time tickTime = sf::seconds(1/400.f);
-long double L;
-const long double ANGLE = 3*M_PI/4;
+double L;
+const double ANGLE = 3*M_PI/4;
 
-const long double DT = 0.00001L; // 1 step of time
-const long double G = 9.8L; //acceleration due to Gravity
-const long double M = 5.L; //total mass of rope
+const double DT = 0.00001L; // 1 step of time
+const double G = 9.8L; //acceleration due to Gravity
+const double M = 5.L; //total mass of rope
 
-std::vector<long double> theta;
-std::vector<long double> thetad;
+std::vector<double> theta;
+std::vector<double> thetad;
 
 static void rgbyuv(sf::Color rgb, uint8_t* Y, uint8_t* U, uint8_t* V)
 {
@@ -54,35 +54,19 @@ static void rgbyuv(sf::Color rgb, uint8_t* Y, uint8_t* U, uint8_t* V)
 	*V = static_cast<uint8_t>(rgb.r *  .500000 + rgb.g * -.418688 + rgb.b * -.081312 + 128);
 }
 
-std::vector<std::vector<long double>> system_eqs; // system_eqs of equations
-
-struct arg {
-	int i;
-	int j;
-	long double factor;
-};
-
-pthread_t* threads;
-arg* thread_args;
-
-void* eval_thread(void* vargs) {
-	arg* args = (arg*)vargs;
-	for(int k = 0; k < N+1; k++){
-		system_eqs[args->j][k]-=args->factor*system_eqs[args->i][k];
-	}
-	return nullptr;
-}
-
-const unsigned int THREADED_THRESHOLD = 1000; //after what # of pendulums do we start multithreading
+std::vector<double> system_eqs; // system_eqs of equations
+std::vector<double> system_rhs; // right hand side constants
+std::vector<int> ipiv;
+int one = 1;
 
 static void update() {
 	// Generate system_eqs of equations using terms from paper
 	for (int i = 0; i < N; i++){
-		system_eqs[i][N] = -M*G*L*(N-i)*std::sin(theta[i]); // initial constant term
+		system_rhs[i] = -M*G*L*(N-i)*std::sin(theta[i]); // initial constant term
 		for(int j = 0; j < N; j++){
 			int mj = (N-std::max(i, j));
-			system_eqs[i][N] -= mj*thetad[j]*thetad[j]*std::sin(theta[i]-theta[j]); // add constant term
-			system_eqs[i][j] = mj*std::cos(theta[i]-theta[j]);
+			system_rhs[i] -= mj*thetad[j]*thetad[j]*std::sin(theta[i]-theta[j]); // add constant term
+			system_eqs[i*N+j] = mj*std::cos(theta[i]-theta[j]);
 		}
 	}
 
@@ -90,48 +74,29 @@ static void update() {
 
 	// std::cout << system_eqs << '\n';
 
-	int res_code;
-	for(int i = 0; i < N; i++){
-		if (N >= THREADED_THRESHOLD)
-		{
-			for(int j = i+1; j < N; j++){
-				thread_args[j].factor = system_eqs[j][i]/system_eqs[i][i];
-				thread_args[j].i = i;
-				thread_args[j].j = j;
-				res_code = pthread_create(&threads[j], NULL, eval_thread, &thread_args[j]);
-				assert(!res_code);
-			}
-			for(int j = i+1; j < N; j++){
-				res_code = pthread_join(threads[j], NULL);
-				assert(!res_code);
-			}
-		} else {
-			for(int j = i+1; j < N; j++){
-				long double factor = system_eqs[j][i]/system_eqs[i][i];
-				for(int k = 0; k < N+1; k++){
-					system_eqs[j][k]-=factor*system_eqs[i][k];
-				}
-			}
-		}
+	int res;
+
+	// std::cout << "EQS:" << system_eqs << std::endl;
+	// std::cout << "RHS:" << system_rhs << std::endl;
+	// std::cout << "PIVOT:" << ipiv << std::endl;
+
+	dgesv_(&N, &one, system_eqs.data(), &N, ipiv.data(), system_rhs.data(), &N, &res);
+
+	if (res != 0){
+		printf("Argument %d had failed with error %s.\n", res, (res < 0) ? "illegal value":"zero value");
 	}
 
+	// std::cout << "RHS:" << system_rhs << std::endl;
 	//Backpropogation portion to get accelerations
 
 	// std::cout << system_eqs << '\n';
 
-	std::vector<long double> thetadd(N);
-	for(int i = N-1; i >= 0; i--){
-		for(int j = N-1; j > i; j--){
-			system_eqs[i][N]-=thetadd[j]*system_eqs[i][j];
-		}
-		thetadd[i] = system_eqs[i][N]/system_eqs[i][i];
-	}
 	// std::cout << "accel: "<< thetadd << '\n';
 
 	// Update angular velocities and positions using dt, and put these into vertexarray
 
 	for(int i = 0; i < N; i++) {
-		thetad[i]+=thetadd[i]*DT;
+		thetad[i]+=system_rhs[i]*DT;
 		theta[i]+=thetad[i]*DT;
 	}
 }
@@ -248,15 +213,14 @@ int main(int argc, char **argv)
 		}
 	}
 
-	L = std::min(WIDTH, HEIGHT)/static_cast<long double>(N)/2;
+	L = std::min(WIDTH, HEIGHT)/static_cast<double>(N)/2;
 
-	theta = std::vector<long double>(N,ANGLE); // angular position
-	thetad = std::vector<long double>(N,0); // angular velocity
+	theta = std::vector<double>(N,ANGLE); // angular position
+	thetad = std::vector<double>(N,0); // angular velocity
 
-	threads = new pthread_t[N];
-	thread_args = new arg[N];
-
-	system_eqs = std::vector<std::vector<long double>>(N,std::vector<long double>(N+1,0));
+	system_eqs = std::vector<double>(N*N,0);
+	system_rhs = std::vector<double>(N,0);
+	ipiv = std::vector<int>(N);
 
 	sf::VertexArray pendulums(sf::LineStrip, N+1);
 	sf::RenderTexture frame_render;
@@ -265,7 +229,7 @@ int main(int argc, char **argv)
 	pendulums[0] = sf::Vector2f(WIDTH/2,HEIGHT/2);
 	char* filename;
 
-	asprintf(&filename, "output/%dPendulum%.2Lfkg%.3Lftheta_%dx%d_%dsecs%dfps_%.3fspeed%Lfdt.mp4", N, M, ANGLE, WIDTH, HEIGHT, duration, fps, speed, DT);
+	asprintf(&filename, "output/%dPendulum%.2lfkg%.3lftheta_%dx%d_%dsecs%dfps_%.3fspeed%lfdt.mp4", N, M, ANGLE, WIDTH, HEIGHT, duration, fps, speed, DT);
 
 	AVFormatContext* av_format_context;
 	AVCodecContext* av_codec_context;
@@ -366,11 +330,11 @@ int main(int argc, char **argv)
 
 	res = av_frame_get_buffer(frame, 32);
 
-	long double lastFrame = 0;
+	double lastFrame = 0;
 
 	for (int i = 0; i < duration*speed/DT; i++) { //encode 60 seconds of video
 		update();
-		printf("Time %d calculated.\n", i);
+		// printf("Time %d calculated.\n", i);
 		// printf("Calculated time %Lf elapsed %Lf\n", i*DT, (i*DT-lastFrame)*fps-speed);
 
 		if ((i-lastFrame)*DT*fps-speed>=0){
@@ -382,8 +346,8 @@ int main(int argc, char **argv)
 			fflush(stdout);
 			
 			for(int i = 0; i < N; i++){
-				sf::Vector2<long double>(std::sin(theta[i]),std::cos(theta[i]));
-				pendulums[i+1].position = pendulums[i].position+static_cast<sf::Vector2f>(L*sf::Vector2<long double>(std::sin(theta[i]),-std::cos(theta[i])));
+				sf::Vector2<double>(std::sin(theta[i]),std::cos(theta[i]));
+				pendulums[i+1].position = pendulums[i].position+static_cast<sf::Vector2f>(L*sf::Vector2<double>(std::sin(theta[i]),-std::cos(theta[i])));
 			}
 
 			frame_render.clear();
