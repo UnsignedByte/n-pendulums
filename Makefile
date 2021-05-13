@@ -9,7 +9,7 @@ OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC)) # Convert .cpp files
 
 CXXFLAGS := -Iinclude -pthread
 # LDLIBS := -lavcodec -lavformat -lGL -lGLU -lglfw
-LDLIBS := -lsfml-graphics -lsfml-window -lsfml-system -lavcodec -lavformat -lavutil -lpthread -llapack
+LDLIBS := -lsfml-graphics -lsfml-window -lsfml-system -lavcodec -lavformat -lavutil -llapack
 
 .PHONY: all clean
 
