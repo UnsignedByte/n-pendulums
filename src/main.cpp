@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:21:00
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-05-13 00:13:27
+* @Last Modified time: 2021-05-13 14:32:52
 */
 
 #include <SFML/Graphics.hpp>
@@ -13,6 +13,8 @@
 #include <vector>
 #include <algorithm>
 #include <cstdio>
+#include <pthread.h>
+#include <assert.h>
 extern "C"
 {
 	#include <libavcodec/avcodec.h>
@@ -27,26 +29,23 @@ extern "C"
 #define av_err2str(errnum) \
 av_make_error_string((char*)__builtin_alloca(AV_ERROR_MAX_STRING_SIZE), AV_ERROR_MAX_STRING_SIZE, errnum)
 
-const int N = 2;
-const int WIDTH = 800;
-const int HEIGHT = 800;
-const float speed = 0.05; // time speed
-const int fps = 30; // fps
-const int duration = 60; // duration in seconds
+int N = 2;
+int WIDTH = 800;
+int HEIGHT = 800;
+float speed = 0.05; // time speed
+int fps = 30; // fps
+int duration = 60; // duration in seconds
 // const sf::Time frameTime = sf::seconds(1/60.f);
 // const sf::Time tickTime = sf::seconds(1/400.f);
-const long double L = HEIGHT/static_cast<long double>(N)/2;
+long double L;
 const long double ANGLE = 3*M_PI/4;
 
 const long double DT = 0.00001L; // 1 step of time
 const long double G = 9.8L; //acceleration due to Gravity
 const long double M = 5.L; //total mass of rope
 
-std::vector<long double> theta(N,ANGLE); // angular position
-std::vector<long double> thetad(N,0); // angular velocity
-
-sf::VertexArray pendulums(sf::LineStrip, N+1);
-sf::RenderTexture frame_render;
+std::vector<long double> theta;
+std::vector<long double> thetad;
 
 static void rgbyuv(sf::Color rgb, uint8_t* Y, uint8_t* U, uint8_t* V)
 {
@@ -55,43 +54,77 @@ static void rgbyuv(sf::Color rgb, uint8_t* Y, uint8_t* U, uint8_t* V)
 	*V = static_cast<uint8_t>(rgb.r *  .500000 + rgb.g * -.418688 + rgb.b * -.081312 + 128);
 }
 
+std::vector<std::vector<long double>> system_eqs; // system_eqs of equations
+
+struct arg {
+	int i;
+	int j;
+	long double factor;
+};
+
+pthread_t* threads;
+arg* thread_args;
+
+void* eval_thread(void* vargs) {
+	arg* args = (arg*)vargs;
+	for(int k = 0; k < N+1; k++){
+		system_eqs[args->j][k]-=args->factor*system_eqs[args->i][k];
+	}
+	return nullptr;
+}
+
+const unsigned int THREADED_THRESHOLD = 1000; //after what # of pendulums do we start multithreading
 
 static void update() {
-	std::vector<std::vector<long double>> system(N,std::vector<long double>(N+1,0)); // system of equations
-
-	// Generate system of equations using terms from paper
+	// Generate system_eqs of equations using terms from paper
 	for (int i = 0; i < N; i++){
-		system[i][N] = -M*G*L*(N-i)*std::sin(theta[i]); // initial constant term
+		system_eqs[i][N] = -M*G*L*(N-i)*std::sin(theta[i]); // initial constant term
 		for(int j = 0; j < N; j++){
 			int mj = (N-std::max(i, j));
-			system[i][N] -= mj*thetad[j]*thetad[j]*std::sin(theta[i]-theta[j]); // add constant term
-			system[i][j] = mj*std::cos(theta[i]-theta[j]);
+			system_eqs[i][N] -= mj*thetad[j]*thetad[j]*std::sin(theta[i]-theta[j]); // add constant term
+			system_eqs[i][j] = mj*std::cos(theta[i]-theta[j]);
 		}
 	}
 
-	//Gaussian elimination on system of equations
+	//Gaussian elimination on system_eqs of equations
 
-	// std::cout << system << '\n';
+	// std::cout << system_eqs << '\n';
 
+	int res_code;
 	for(int i = 0; i < N; i++){
-		for(int j = i+1; j < N; j++){
-			long double factor = system[j][i]/system[i][i];
-			for(int k = 0; k < N+1; k++){
-				system[j][k]-=factor*system[i][k];
+		if (N >= THREADED_THRESHOLD)
+		{
+			for(int j = i+1; j < N; j++){
+				thread_args[j].factor = system_eqs[j][i]/system_eqs[i][i];
+				thread_args[j].i = i;
+				thread_args[j].j = j;
+				res_code = pthread_create(&threads[j], NULL, eval_thread, &thread_args[j]);
+				assert(!res_code);
+			}
+			for(int j = i+1; j < N; j++){
+				res_code = pthread_join(threads[j], NULL);
+				assert(!res_code);
+			}
+		} else {
+			for(int j = i+1; j < N; j++){
+				long double factor = system_eqs[j][i]/system_eqs[i][i];
+				for(int k = 0; k < N+1; k++){
+					system_eqs[j][k]-=factor*system_eqs[i][k];
+				}
 			}
 		}
 	}
 
 	//Backpropogation portion to get accelerations
 
-	// std::cout << system << '\n';
+	// std::cout << system_eqs << '\n';
 
 	std::vector<long double> thetadd(N);
 	for(int i = N-1; i >= 0; i--){
 		for(int j = N-1; j > i; j--){
-			system[i][N]-=thetadd[j]*system[i][j];
+			system_eqs[i][N]-=thetadd[j]*system_eqs[i][j];
 		}
-		thetadd[i] = system[i][N]/system[i][i];
+		thetadd[i] = system_eqs[i][N]/system_eqs[i][i];
 	}
 	// std::cout << "accel: "<< thetadd << '\n';
 
@@ -101,7 +134,6 @@ static void update() {
 		thetad[i]+=thetadd[i]*DT;
 		theta[i]+=thetad[i]*DT;
 	}
-	// std::cout << "theta: "<< theta << '\n';
 }
 
 static int write_frame(AVFormatContext* av_format_context, const AVRational& time_base, AVStream *av_stream, AVPacket *packet)
@@ -149,8 +181,86 @@ static void encode(AVFormatContext* av_format_context, AVCodecContext* av_codec_
 	}
 }
 
+// reads argc and argv and writes to names, values
+static int parse_cli(int argc, char** argv, std::vector<char*>& names, std::vector<char*>& values)
+{
+	int argi = -1;
+	for(int i = 1; i < argc; i++)
+	{
+		char* word = argv[i];
+		if (word[0] == '-') {
+			word++; // remove "-" from the string
+			argi++;
+			// printf("Parsing argument name %s, index %d\n", word, argi);
+			names.push_back(word);
+			values.push_back(argv[++i]);
+		} else {
+			asprintf(&values[argi], "%s %s", values[argi], word);
+			// printf("Updating argument value to %s\n", word);
+		}
+	}
+	return argi+1;
+}
+
+// http://www.cse.yorku.ca/~oz/hash.html
+unsigned constexpr static hash(const char* str)
+{
+	return *str ?
+    static_cast<unsigned int>(*str) + 33 * hash(str + 1) :
+    5381;
+}
+
 int main(int argc, char **argv)
 {
+	//handle cli arguments;
+	std::vector<char*> names, values;
+	int argL = parse_cli(argc, argv, names, values);
+	for(int i = 0; i < argL; i++){
+		switch (hash(names[i])) {
+			case hash("n"):
+			case hash("N"):
+			case hash("count"):
+				N = atoi(values[i]);
+				printf("Set pendulum count to %d\n", N);
+				break;
+			case hash("width"):
+			case hash("w"):
+				WIDTH = atoi(values[i]);
+				break;
+			case hash("height"):
+			case hash("h"):
+				HEIGHT = atoi(values[i]);
+				break;
+			case hash("fps"):
+				fps = atoi(values[i]);
+				printf("Set fps to %d\n", fps);
+				break;
+			case hash("duration"):
+			case hash("d"):
+				duration = atoi(values[i]);
+				printf("Set duration to %d\n", duration);
+				break;
+			case hash("speed"):
+			case hash("s"):
+				speed = atof(values[i]);
+				printf("Set speed to %f\n", speed);
+				break;
+		}
+	}
+
+	L = std::min(WIDTH, HEIGHT)/static_cast<long double>(N)/2;
+
+	theta = std::vector<long double>(N,ANGLE); // angular position
+	thetad = std::vector<long double>(N,0); // angular velocity
+
+	threads = new pthread_t[N];
+	thread_args = new arg[N];
+
+	system_eqs = std::vector<std::vector<long double>>(N,std::vector<long double>(N+1,0));
+
+	sf::VertexArray pendulums(sf::LineStrip, N+1);
+	sf::RenderTexture frame_render;
+
 	frame_render.create(WIDTH, HEIGHT);
 	pendulums[0] = sf::Vector2f(WIDTH/2,HEIGHT/2);
 	char* filename;
@@ -161,7 +271,6 @@ int main(int argc, char **argv)
 	AVCodecContext* av_codec_context;
 	AVCodec* av_codec;
 	AVStream* av_stream;
-  uint8_t endcode[] = { 0, 0, 1, 0xb7 };
 	int res; //stores error codes (if returned);
 
 	av_format_context = avformat_alloc_context();
@@ -261,6 +370,7 @@ int main(int argc, char **argv)
 
 	for (int i = 0; i < duration*speed/DT; i++) { //encode 60 seconds of video
 		update();
+		printf("Time %d calculated.\n", i);
 		// printf("Calculated time %Lf elapsed %Lf\n", i*DT, (i*DT-lastFrame)*fps-speed);
 
 		if ((i-lastFrame)*DT*fps-speed>=0){

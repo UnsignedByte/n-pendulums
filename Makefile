@@ -7,9 +7,9 @@ MAIN := $(BIN_DIR)/exe #output exe
 SRC := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC)) # Convert .cpp files to .o
 
-CXXFLAGS := -Iinclude
+CXXFLAGS := -Iinclude -pthread
 # LDLIBS := -lavcodec -lavformat -lGL -lGLU -lglfw
-LDLIBS := -lsfml-graphics -lsfml-window -lsfml-system -lavcodec -lavformat -lavutil
+LDLIBS := -lsfml-graphics -lsfml-window -lsfml-system -lavcodec -lavformat -lavutil -lpthread
 
 .PHONY: all clean
 
