@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:21:00
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-05-13 15:33:16
+* @Last Modified time: 2021-05-13 18:16:11
 */
 
 #include <SFML/Graphics.hpp>
@@ -13,6 +13,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstdio>
+#include <list>
 extern "C"
 {
 	#include <libavcodec/avcodec.h>
@@ -35,8 +36,11 @@ int HEIGHT = 800;
 float speed = 0.05; // time speed
 int fps = 30; // fps
 int duration = 60; // duration in seconds
-// const sf::Time frameTime = sf::seconds(1/60.f);
-// const sf::Time tickTime = sf::seconds(1/400.f);
+float trail_length = 5; //# of seconds of trail to save (will round)
+int _r_trail_length;
+std::vector<int> trail_ids; // pendulum index for each trail
+std::list<sf::Vector2f> trails; // pendulum index for each trail
+
 double L;
 const double ANGLE = 3*M_PI/4;
 
@@ -167,6 +171,32 @@ static int parse_cli(int argc, char** argv, std::vector<char*>& names, std::vect
 	return argi+1;
 }
 
+// https://stackoverflow.com/questions/40629345/fill-array-dynamicly-with-gradient-color-c
+//input: ratio is between 0 to 1
+//output: rgb color
+sf::Color rainbowrgb(double ratio)
+{
+    //we want to normalize ratio so that it fits in to 6 regions
+    //where each region is 256 units long
+    int normalized = int(ratio * 256 * 6);
+
+    //find the distance to the start of the closest region
+    int x = normalized % 256;
+
+    int red = 0, grn = 0, blu = 0;
+    switch(normalized / 256)
+    {
+    case 0: red = 255;      grn = x;        blu = 0;       break;//red
+    case 1: red = 255 - x;  grn = 255;      blu = 0;       break;//yellow
+    case 2: red = 0;        grn = 255;      blu = x;       break;//green
+    case 3: red = 0;        grn = 255 - x;  blu = 255;     break;//cyan
+    case 4: red = x;        grn = 0;        blu = 255;     break;//blue
+    case 5: red = 255;      grn = 0;        blu = 255 - x; break;//magenta
+    }
+
+    return sf::Color(red, grn, blu);
+}
+
 // http://www.cse.yorku.ca/~oz/hash.html
 unsigned constexpr static hash(const char* str)
 {
@@ -174,6 +204,27 @@ unsigned constexpr static hash(const char* str)
     static_cast<unsigned int>(*str) + 33 * hash(str + 1) :
     5381;
 }
+
+// struct Node {
+// 	Node(): x(-1,-1)
+// 	{
+// 	}
+// 	Node(sf::Vector2f v): x(v)
+// 	{
+// 	}
+// 	sf::Vector2f x;
+// 	Node* next;
+// };
+
+// Node* head;
+// Node* tail;
+
+// void node_push(Node* n) {
+// 	printf("Pushing node\n");
+// 	tail->next = n;
+// 	tail = n;
+// 	printf("Pushed node\n");
+// }
 
 int main(int argc, char **argv)
 {
@@ -210,8 +261,36 @@ int main(int argc, char **argv)
 				speed = atof(values[i]);
 				printf("Set speed to %f\n", speed);
 				break;
+			case hash("trail"):
+			case hash("t"):
+				switch(hash(values[i])){
+					case hash("all"):
+					case hash("a"):
+						for(int i = 0; i < N; i++){
+							trail_ids.push_back(i);
+						}
+						break;
+					case hash("last"):
+					case hash("l"):
+						trail_ids.push_back(N-1);
+						break;
+					default:
+						printf("Setting trails failed with value %s\n", values[i]);
+				}
+				printf("Set trails to type %s\n", values[i]);
+				break;
+			case hash("trail_duration"):
+			case hash("td"):
+				trail_length = atof(values[i]);
+				printf("Set trail length to %f seconds\n", trail_length);
+				break;
+			default:
+				printf("Unknown parameter %s had value %s\n", names[i], values[i]);
 		}
 	}
+
+	int trail_count = trail_ids.size();
+	_r_trail_length = trail_count*trail_length/DT*speed;
 
 	L = std::min(WIDTH, HEIGHT)/static_cast<double>(N)/2;
 
@@ -331,9 +410,9 @@ int main(int argc, char **argv)
 	res = av_frame_get_buffer(frame, 32);
 
 	double lastFrame = 0;
+	sf::VertexArray trails_vertex(sf::Points, 0);
 
 	for (int i = 0; i < duration*speed/DT; i++) { //encode 60 seconds of video
-		update();
 		// printf("Time %d calculated.\n", i);
 		// printf("Calculated time %Lf elapsed %Lf\n", i*DT, (i*DT-lastFrame)*fps-speed);
 
@@ -344,14 +423,36 @@ int main(int argc, char **argv)
 				printf("Writing frame %d\n", frid);
 
 			fflush(stdout);
-			
-			for(int i = 0; i < N; i++){
-				sf::Vector2<double>(std::sin(theta[i]),std::cos(theta[i]));
-				pendulums[i+1].position = pendulums[i].position+static_cast<sf::Vector2f>(L*sf::Vector2<double>(std::sin(theta[i]),-std::cos(theta[i])));
+
+			// printf("%ld\n", trails.size());
+			trails_vertex.resize(trails.size());
+
+			// Node* curr = head;
+			// int ind = 0;
+			// while(curr->next)
+			// {
+			// 	trails_vertex[ind] = curr->x;
+			// 	ind++;
+			// 	curr = curr->next;
+			// }
+
+			std::list<sf::Vector2f>::iterator it;
+			int ind = _r_trail_length;
+			for (it = trails.end(); it != trails.begin(); it--)
+			{
+				trails_vertex[_r_trail_length-ind].position = *it;
+				trails_vertex[_r_trail_length-ind].color = rainbowrgb((ind%trail_count)/(double)trail_count);
+				double colRatio = 1-(ind/trail_count)/(double)(_r_trail_length/trail_count);
+
+				colRatio*=colRatio;
+				// colRatio*=colRatio; //fourth power
+				trails_vertex[_r_trail_length-ind].color *= 1-colRatio;
+				ind--;
 			}
 
 			frame_render.clear();
 			frame_render.draw(pendulums);
+			frame_render.draw(trails_vertex);
 
 			sf::Image frame_img = frame_render.getTexture().copyToImage();
 
@@ -374,6 +475,26 @@ int main(int argc, char **argv)
 
 			//encode image
 			encode(av_format_context, av_codec_context, av_stream, frame, packet);
+		}
+		update();
+			
+		for(int i = 0; i < N; i++){
+			sf::Vector2<double>(std::sin(theta[i]),std::cos(theta[i]));
+			pendulums[i+1].position = pendulums[i].position+static_cast<sf::Vector2f>(L*sf::Vector2<double>(std::sin(theta[i]),-std::cos(theta[i])));
+		}
+
+		for(int i = 0; i < trail_ids.size(); i++)
+		{
+			if (i >= _r_trail_length)
+			{
+				// Node* oldhead = &*head;
+				// head = head->next;
+				// delete oldhead;
+				trails.pop_front();
+			}
+			// Node nnode(pendulums[trail_ids[i]+1].position);
+			// node_push(&nnode);
+			trails.push_back(pendulums[trail_ids[i]+1].position);
 		}
 	}
 

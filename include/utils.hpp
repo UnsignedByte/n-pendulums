@@ -2,11 +2,11 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 16:49:10
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-05-13 15:31:07
+* @Last Modified time: 2021-05-13 17:56:09
 */
 
 #pragma once
-// #include <SFML/System.hpp>
+#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
 // const float mv = static_cast<float>(2*M_PI); // maximum velocity
@@ -24,3 +24,6 @@ std::ostream& operator<<(std::ostream& os, std::vector<long double> matrix);
 std::ostream& operator<<(std::ostream& os, std::vector<std::vector<double> > matrix);
 std::ostream& operator<<(std::ostream& os, std::vector<double> matrix);
 std::ostream& operator<<(std::ostream& os, std::vector<int> matrix);
+
+sf::Color operator*(sf::Color&c, double n);
+sf::Color& operator*=(sf::Color&c, double n);

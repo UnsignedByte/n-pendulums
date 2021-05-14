@@ -2,10 +2,10 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 16:49:16
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-05-13 15:31:18
+* @Last Modified time: 2021-05-13 18:07:58
 */
 
-// #include <SFML/System.hpp>
+#include <SFML/Graphics.hpp>
 #include <cmath>
 #include <iostream>
 #include <vector>
@@ -65,4 +65,18 @@ std::ostream& operator<<(std::ostream& os, std::vector<int> matrix)
 		os << matrix[i] << " ";
 	}
 	return os << '\b';
+}
+
+sf::Color operator*(sf::Color&c, double n)
+{
+	return sf::Color((int)n*c.r, (int)n*c.g, (int)n*c.b);
+}
+
+sf::Color& operator*=(sf::Color&c, double n)
+{
+	// n = 0.1;
+	c.r*=n;
+	c.g*=n;
+	c.b*=n;
+	return c;
 }
