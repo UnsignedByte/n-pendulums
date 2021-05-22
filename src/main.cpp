@@ -2,7 +2,7 @@
 * @Author: UnsignedByte
 * @Date:   2021-04-15 13:21:00
 * @Last Modified by:   UnsignedByte
-* @Last Modified time: 2021-05-13 18:16:11
+* @Last Modified time: 2021-05-13 18:39:12
 */
 
 #include <SFML/Graphics.hpp>
@@ -35,6 +35,7 @@ int WIDTH = 800;
 int HEIGHT = 800;
 float speed = 0.05; // time speed
 int fps = 30; // fps
+int trail_fps = 100; // how often to add to trail queue
 int duration = 60; // duration in seconds
 float trail_length = 5; //# of seconds of trail to save (will round)
 int _r_trail_length;
@@ -290,7 +291,7 @@ int main(int argc, char **argv)
 	}
 
 	int trail_count = trail_ids.size();
-	_r_trail_length = trail_count*trail_length/DT*speed;
+	_r_trail_length = trail_count*trail_length*trail_fps*speed;
 
 	L = std::min(WIDTH, HEIGHT)/static_cast<double>(N)/2;
 
@@ -308,7 +309,7 @@ int main(int argc, char **argv)
 	pendulums[0] = sf::Vector2f(WIDTH/2,HEIGHT/2);
 	char* filename;
 
-	asprintf(&filename, "output/%dPendulum%.2lfkg%.3lftheta_%dx%d_%dsecs%dfps_%.3fspeed%lfdt.mp4", N, M, ANGLE, WIDTH, HEIGHT, duration, fps, speed, DT);
+	asprintf(&filename, "output/%dPendulum%.2lfkg%.3lftheta_%dx%d_%dsecs%dfps_%.3fspeed%lfdt_%dtrails.mp4", N, M, ANGLE, WIDTH, HEIGHT, duration, fps, speed, DT, trail_count);
 
 	AVFormatContext* av_format_context;
 	AVCodecContext* av_codec_context;
@@ -410,6 +411,7 @@ int main(int argc, char **argv)
 	res = av_frame_get_buffer(frame, 32);
 
 	double lastFrame = 0;
+	double lastTrailFrame = 0;
 	sf::VertexArray trails_vertex(sf::Points, 0);
 
 	for (int i = 0; i < duration*speed/DT; i++) { //encode 60 seconds of video
@@ -438,15 +440,17 @@ int main(int argc, char **argv)
 
 			std::list<sf::Vector2f>::iterator it;
 			int ind = _r_trail_length;
+			int ind_offset = trails.size()-1-_r_trail_length;
 			for (it = trails.end(); it != trails.begin(); it--)
 			{
-				trails_vertex[_r_trail_length-ind].position = *it;
-				trails_vertex[_r_trail_length-ind].color = rainbowrgb((ind%trail_count)/(double)trail_count);
+				// printf("%d\n", ind+ind_offset);
+				trails_vertex[ind+ind_offset].position = *it;
+				trails_vertex[ind+ind_offset].color = rainbowrgb((ind%trail_count)/(double)trail_count);
 				double colRatio = 1-(ind/trail_count)/(double)(_r_trail_length/trail_count);
 
 				colRatio*=colRatio;
 				// colRatio*=colRatio; //fourth power
-				trails_vertex[_r_trail_length-ind].color *= 1-colRatio;
+				trails_vertex[ind+ind_offset].color *= 1-colRatio;
 				ind--;
 			}
 
@@ -476,26 +480,30 @@ int main(int argc, char **argv)
 			//encode image
 			encode(av_format_context, av_codec_context, av_stream, frame, packet);
 		}
-		update();
-			
-		for(int i = 0; i < N; i++){
-			sf::Vector2<double>(std::sin(theta[i]),std::cos(theta[i]));
-			pendulums[i+1].position = pendulums[i].position+static_cast<sf::Vector2f>(L*sf::Vector2<double>(std::sin(theta[i]),-std::cos(theta[i])));
+
+		if ((i-lastFrame)*DT*trail_fps-speed>=0){
+			lastTrailFrame = i;
+			for(int i = 0; i < N; i++){
+				sf::Vector2<double>(std::sin(theta[i]),std::cos(theta[i]));
+				pendulums[i+1].position = pendulums[i].position+static_cast<sf::Vector2f>(L*sf::Vector2<double>(std::sin(theta[i]),-std::cos(theta[i])));
+			}
+
+			for(int i = 0; i < trail_ids.size(); i++)
+			{
+				if (trails.size() >= _r_trail_length)
+				{
+					// Node* oldhead = &*head;
+					// head = head->next;
+					// delete oldhead;
+					trails.pop_front();
+				}
+				// Node nnode(pendulums[trail_ids[i]+1].position);
+				// node_push(&nnode);
+				trails.push_back(pendulums[trail_ids[i]+1].position);
+			}
 		}
 
-		for(int i = 0; i < trail_ids.size(); i++)
-		{
-			if (i >= _r_trail_length)
-			{
-				// Node* oldhead = &*head;
-				// head = head->next;
-				// delete oldhead;
-				trails.pop_front();
-			}
-			// Node nnode(pendulums[trail_ids[i]+1].position);
-			// node_push(&nnode);
-			trails.push_back(pendulums[trail_ids[i]+1].position);
-		}
+		update();
 	}
 
 	//flush encoder

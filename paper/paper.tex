@@ -1,11 +1,12 @@
 % @Author: UnsignedByte
 % @Date:   11:12:32, 08-Dec-2020
 % @Last Modified by:   UnsignedByte
-% @Last Modified time: 2021-05-11 13:44:56
+% @Last Modified time: 2021-05-21 22:45:03
 
 \documentclass{article}
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{asymptote}
 \graphicspath{ {./images/} }
 \usepackage[%  
     colorlinks=true,
@@ -23,8 +24,57 @@
   \tableofcontents
 \newpage
 
+\begin{asydef}
+import astylib;
+\end{asydef}
+
 \section{Introduction}
 All source code for this project is public on \href{https://github.com/UnsignedByte/n-pendulums}{Github}.
+
+A single pendulum, is defined by a point of mass suspended by a rigid rod allowed to rotate freely on a joint at the other end of the rod. The mechanics of such a pendulum is simple to calculate, even with Newtonian mechanics. When attaching a second pendulum to the mass of the first pendulum, we get a system widely known as the "double pendulum." The double pendulum system is widely known to be a chaotic system, meaning a small difference in initial conditions results in widely different motion after a period of time. Figure \ref{fig:1} is an example of such a system. This method can be continued, adding more and more pendulums, creating a "pendulum chain"--an N pendulum system.
+
+To simplify the problem, we define our system while leaving a number of things constant. Our pendulums will have massless rods of constant length $l$, with a mass $m$ at the end of each rod, or at the "joint" between two pendulums. Each pendulum will be defined by a single angle $\theta_i$, the angle of the pendulum rod from the vertical. 
+
+\begin{figure}[h]
+	\caption{Example double pendulum system with labeled components.}
+	\label{fig:1}
+	\begin{center}
+		\begin{asy}
+		pair R,A,B,AY,BY;
+		real TA,TB,L;
+		L = 100; // length
+		astyscale = 15;
+
+		R = (0,0);
+		TA = 45;
+		A = R+dir(270+TA)*L;
+		AY = (R.x, A.y);
+		TB = -30;
+		B = A+dir(270+TB)*L;
+		BY = (A.x, B.y);
+
+		pen guide = linetype(new real[] {0,5});
+
+		draw(R--A--B);
+		draw(astyangle(AY, R, A));
+		draw(astyangle(B, A, BY));
+		draw(astycomponents(R, A), guide);
+		draw(astycomponents(A, B), guide);
+
+		label("$R$", R, -dir(270+TA));
+		label("$A$", A, E);
+		label("$B$", B, dir(270+TB));
+		label("$l$", R--A, dir(TA));
+		label("$l$", A--B, -dir(TB));
+		label("$y_1$", (R.x, A.y)--R, W);
+		label("$x_1$", (R.x, A.y)--A, S);
+		label("$y_2$", (A.x, B.y)--A, E);
+		label("$x_2$", (A.x, B.y)--B, S);
+		label("$\theta_1$", R+dir(270+TA/2)*astyscale, dir(270+TA/2));
+		label("$\theta_2$", A+dir(270+TB/2)*astyscale, dir(270+TB/2));
+		\end{asy}
+	\end{center}
+\end{figure}
 
 \section{Lagrangian Approach}
 In contrast to the limitations of the Newtonian Free Body Diagram approach to calculating propogated forces amongst an $n$-pendulum system, the use of Lagrangian Mechanics does not require an analysis of forces. Instead, the total potential and kinetic energy in the system is used to determine equations of motion for each pendulum in the system.
@@ -40,9 +90,9 @@ We begin by defining the kinematic constraints of our problem.
 \end{align*}
 Note that $y_i$ is negative, because $\theta_i$ is to the negative vertical. Next we derive the velocities. These can be calculated simply by taking the derivative of the positions.
 \begin{align*}
-	\dot{x}_i &= \dot x_{i-1} + \dot\theta_i \cdot l\cos{\theta_i}\\
+	\dot x_i &= \dot x_{i-1} + \dot\theta_i \cdot l\cos{\theta_i}\\
 	&= l\sum_{k=1}^i\dot\theta_k\cos{\theta_k}\\
-	\dot{x}_i &= \dot y_{i-1} + \dot\theta_i \cdot l\sin{\theta_i}\\
+	\dot y_i &= \dot y_{i-1} + \dot\theta_i \cdot l\sin{\theta_i}\\
 	&= l\sum_{k=1}^i\dot\theta_k\sin{\theta_k}
 \end{align*}
 Plugging these in, we can calculate the total potential energy $V=mgh$ and the total kinetic energy $T=\frac{1}{2}mv^2$. First, we solve for $V$ and simplify:
@@ -180,6 +230,4 @@ Now, we combine this back into the Euler-Lagrange equation, and simplify.
 We have our equation 
 $$0=mL^2\int_0^L(L-\max(i,k))\left(\ddot\theta_k\cos(\theta_i-\theta_k)+\dot\theta_k^2\sin(\theta_i-\theta_k)\right)dk+ mgL(L-i)\sin\theta_i$$
 for all $i \in [0,L]$, which we next need to evaluate for all $\ddot\theta_i$.
-\subsubsection{Finding \texorpdfstring{$\ddot\theta_i$}{Angular Acceleration}}
-e
 \end{document}
